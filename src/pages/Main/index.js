@@ -1,12 +1,16 @@
+/* eslint-disable no-underscore-dangle */
 /* eslint-disable react/forbid-prop-types */
 import React, { useEffect, useState } from 'react';
 import { Marker, Callout } from 'react-native-maps';
 import PropTypes from 'prop-types';
-
 import {
   requestPermissionsAsync,
   getCurrentPositionAsync,
 } from 'expo-location';
+
+import api from '../../services/api';
+
+import SearchForm from '../../components/SearchForm';
 
 import {
   CustomMapView,
@@ -18,6 +22,7 @@ import {
 } from './styles';
 
 export default function Main({ navigation }) {
+  const [devs, setDevs] = useState([]);
   const [currentRegion, setCurrentRegion] = useState(null);
 
   useEffect(() => {
@@ -42,37 +47,67 @@ export default function Main({ navigation }) {
     loadInitialPosition();
   }, []);
 
+  async function loadDevs() {
+    try {
+      console.log('Opa');
+      const { latitude, longitude } = currentRegion;
+
+      const response = await api.get('/search', {
+        latitude,
+        longitude,
+        techs: ['ReactJS'],
+      });
+      setDevs(response.data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+
+  function handleRegionChanged(region) {
+    setCurrentRegion(region);
+  }
+
   if (!currentRegion) {
     return null;
   }
 
   return (
-    <CustomMapView initialRegion={currentRegion}>
-      <Marker coordinate={{ latitude: -23.7203513, longitude: -46.5535921 }}>
-        <MarkerImage
-          source={{
-            uri: 'https://avatars2.githubusercontent.com/u/51893683?s=460&v=4',
-          }}
-        />
-        <Callout
-          onPress={() => {
-            navigation.navigate('Profile', {
-              github_username: 'patricklongo1',
-            });
-          }}
-        >
-          <Content>
-            <Name>Patrick Longo</Name>
-            <Techs>Javascript, Node.js</Techs>
-            <Bio>
-              Atualmente cursando Bootcamp da RocketSeat. Estou focado em
-              dominar a stack de desenvolvimento de JavaScript, utilizando
-              Node.JS, ReactJS e React-Native!
-            </Bio>
-          </Content>
-        </Callout>
-      </Marker>
-    </CustomMapView>
+    <>
+      <CustomMapView
+        onRegionChangeComplete={handleRegionChanged}
+        initialRegion={currentRegion}
+      >
+        {devs.map(dev => (
+          <Marker
+            key={dev._id}
+            coordinate={{
+              latitude: dev.location.coordinates[1],
+              longitude: dev.location.coordinates[0],
+            }}
+          >
+            <MarkerImage
+              source={{
+                uri: dev.avatar_url,
+              }}
+            />
+            <Callout
+              onPress={() => {
+                navigation.navigate('Profile', {
+                  github_username: dev.github_username,
+                });
+              }}
+            >
+              <Content>
+                <Name>{dev.name}</Name>
+                <Techs>{dev.techs.join(', ')}</Techs>
+                <Bio>{dev.bio}</Bio>
+              </Content>
+            </Callout>
+          </Marker>
+        ))}
+      </CustomMapView>
+      <SearchForm loadDevs={loadDevs} />
+    </>
   );
 }
 

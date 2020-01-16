@@ -8,8 +8,6 @@ export const CustomMapView = styled(MapView)`
 export const MarkerImage = styled.Image`
   width: 54px;
   height: 54px;
-  border-radius: 4px;
-  border: 4px solid #fff;
 `;
 
 export const Content = styled.View`
