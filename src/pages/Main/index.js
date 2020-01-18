@@ -48,22 +48,19 @@ export default function Main({ navigation }) {
   }, []);
 
   async function loadDevs() {
-    try {
-      console.log('Opa');
-      const { latitude, longitude } = currentRegion;
+    console.log('Opa');
+    const { latitude, longitude } = currentRegion;
 
-      const response = await api.get('/search', {
-        latitude,
-        longitude,
-        techs: ['ReactJS'],
-      });
-      setDevs(response.data);
-    } catch (error) {
-      console.log(error);
-    }
+    const response = await api.get('/search', {
+      latitude,
+      longitude,
+      techs: ['ReactJS'],
+    });
+    setDevs(response.data);
   }
 
   function handleRegionChanged(region) {
+    console.log(region);
     setCurrentRegion(region);
   }
 
