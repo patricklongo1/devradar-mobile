@@ -9,6 +9,7 @@ import {
 } from 'expo-location';
 
 import api from '../../services/api';
+import { connect, disconnect, subscribeToNewDevs } from '../../services/socket';
 
 import SearchForm from '../../components/SearchForm';
 
@@ -24,6 +25,7 @@ import {
 export default function Main({ navigation }) {
   const [devs, setDevs] = useState([]);
   const [currentRegion, setCurrentRegion] = useState(null);
+  const [techs, setTechs] = useState('');
 
   useEffect(() => {
     async function loadInitialPosition() {
@@ -47,20 +49,35 @@ export default function Main({ navigation }) {
     loadInitialPosition();
   }, []);
 
+  useEffect(() => {
+    subscribeToNewDevs(dev => {
+      setDevs([...devs, dev]);
+    });
+  }, [devs]);
+
+  function setupWebsocket() {
+    disconnect();
+
+    const { latitude, longitude } = currentRegion;
+
+    connect(latitude, longitude, techs);
+  }
+
   async function loadDevs() {
-    console.log('Opa');
     const { latitude, longitude } = currentRegion;
 
     const response = await api.get('/search', {
-      latitude,
-      longitude,
-      techs: ['ReactJS'],
+      params: {
+        latitude,
+        longitude,
+        techs,
+      },
     });
     setDevs(response.data);
+    setupWebsocket();
   }
 
   function handleRegionChanged(region) {
-    console.log(region);
     setCurrentRegion(region);
   }
 
@@ -103,7 +120,7 @@ export default function Main({ navigation }) {
           </Marker>
         ))}
       </CustomMapView>
-      <SearchForm loadDevs={loadDevs} />
+      <SearchForm loadDevs={loadDevs} techs={techs} setTechs={setTechs} />
     </>
   );
 }
